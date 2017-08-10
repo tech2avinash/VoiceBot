@@ -1,0 +1,64 @@
+<!DOCTYPE>
+
+<head>
+    <title>Jarvis
+    </title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        var synth = window.speechSynthesis;
+
+        function guid() {
+            function s4() {
+                return Math.floor((1 + Math.random()) * 0x10000)
+                    .toString(16)
+                    .substring(1);
+            }
+            return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+                s4() + '-' + s4() + s4() + s4();
+        }
+        localStorage.setItem('session', guid());
+        if (!('webkitSpeechRecognition' in window)) {
+            upgrade();
+        } else {
+            var recognition = new webkitSpeechRecognition();
+            var final_transcript = '';
+            recognition.lang = 'en-US';
+            recognition.maxAlternatives = 1;
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.onstart = () => {
+                console.log('jarvis started');
+            }
+            recognition.onresult = (e) => {
+                const recongnizedtext = e.results[e.resultIndex][0].transcript;
+                if (e.results[e.resultIndex].isFinal) {
+                    console.log('Me:: ', recongnizedtext);
+                    $.post('/nlp', {
+                        'text': recongnizedtext,
+                        session: localStorage.session
+                    }, (res) => {
+                        console.log('jarvis:: ', res);
+                        var utterThis = new SpeechSynthesisUtterance(res);
+                        utterThis.voice = synth.getVoices()[3];
+                        utterThis.pitch = 0.8;
+                        synth.speak(utterThis);
+                    });
+                }
+            }
+            recognition.onerror = (e) => {
+                console.log('onerror', e);
+            }
+            recognition.onend = (e) => {
+                console.log('end listening');
+                recognition.start();
+            }
+            recognition.start();
+        }
+    </script>
+</head>
+<html>
+
+<body>
+</body>
+
+</html>
